@@ -11,6 +11,15 @@
         _G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false)
     end
 
+    ------- SCROLL WITH MOUSEWHEEL -------
+
+    local function ScrollFrame_OnMouseWheel(self, delta)
+        local newValue = self:GetVerticalScroll() - (delta * 20);
+        newValue = math.max(newValue, 0);
+        newValue = math.min(newValue, self:GetVerticalScrollRange());
+        self:SetVerticalScroll(newValue);
+    end
+
     ------- CREATE PARENT UI -------
 
     local UIConfig = CreateFrame("Frame", "MightyNotes_Frame", UIParent, "BasicFrameTemplateWithInset");
@@ -64,9 +73,20 @@
 
         ------- NAVBAR SECTION -------
 
-        UIConfig.navbar = CreateFrame("Frame", "MightyNotes_Navbar", UIConfig)
-        UIConfig.navbar:SetSize(150, 300)
-        UIConfig.navbar:SetPoint("TOPLEFT", UIConfig, "TOPLEFT", 10, -40)
+        UIConfig.navbar = CreateFrame("Frame", "MightyNotes_Navbar", UIConfig);
+        UIConfig.navbar:SetSize(150, 350);
+        UIConfig.navbar:SetPoint("TOPLEFT", UIConfig, "TOPLEFT", 10, -40);
+        UIConfig.navbar:SetClipsChildren(true);
+
+        ------- NAVBAR SCROLLFRAME -------
+
+        UIConfig.navScrollFrame = CreateFrame("ScrollFrame", "MightyNotes_ScrollFrame", UIConfig, "UIPanelScrollFrameTemplate");
+        UIConfig.navScrollFrame:SetSize(145, 280);
+        UIConfig.navScrollFrame:SetPoint("TOPLEFT", UIConfig, "TOPLEFT", 0, -40);
+        UIConfig.navScrollFrame:SetScrollChild(UIConfig.navbar);
+        UIConfig.navScrollFrame:SetScript("OnMouseWheel", ScrollFrame_OnMouseWheel);
+
+        ------- Misc. Notes -------
 
         local function RefreshNoteList()
             -- Ensure we have a table to store the buttons
@@ -79,7 +99,7 @@
                 -- Create a new button if it doesn't exist yet
                 if not button then
                     button = CreateFrame("Button", nil, UIConfig.navbar, "GameMenuButtonTemplate")
-                    button:SetSize(140, 20)
+                    button:SetSize(135, 20)
                     button:SetNormalFontObject("GameFontNormal")
                     button:SetHighlightFontObject("GameFontHighlight")
        
@@ -88,7 +108,7 @@
                 end
         
                 -- Set the button position and properties
-                button:SetPoint("TOP", UIConfig.navbar, "TOP", 0, -((i - 1) * 25))
+                button:SetPoint("TOP", UIConfig.navbar, "TOP", 5, -((i - 1) * 25))
                 button:SetText(L["Note "] .. i)
         
                 -- Ensure the button is shown (in case it was hidden before)
@@ -100,17 +120,17 @@
 						selectedNoteIndex = i
 						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "")
 						AdjustEditBoxHeight();						
-					else
+                    elseif button == "RightButton" then
 						varName  = i	--<-- BtnNumber
 						varName2 = UIConfig.navbar.noteButtons[i]:GetText() --<-- old name
-						local dialog = StaticPopup_Show("MY_FIRST_POPUP")
+						local dialog = StaticPopup_Show("RENAME")
 						if (dialog) then
 							dialog.data  = varName
 							dialog.data2 = varName2
 						end
 					end
                 end)
-				button:RegisterForClicks("AnyDown", "AnyUp")											--<-- MODI.E
+				button:RegisterForClicks("AnyDown", "AnyUp");											--<-- MODI.E
 							
             end
         
@@ -118,15 +138,6 @@
             for i = #MightyNotesList + 1, #UIConfig.navbar.noteButtons do
                 UIConfig.navbar.noteButtons[i]:Hide();
             end
-        end
-
-        ------- SCROLL WITH MOUSEWHEEL -------
-
-        local function ScrollFrame_OnMouseWheel(self, delta)
-            local newValue = self:GetVerticalScroll() - (delta * 20);
-            newValue = math.max(newValue, 0);
-            newValue = math.min(newValue, self:GetVerticalScrollRange());
-            self:SetVerticalScroll(newValue);
         end
 
         ------- editable text area -------
@@ -141,7 +152,7 @@
         UIConfig.editBox = CreateFrame("EditBox", "MightyNotes_EditBox", UIConfig.scrollFrame);
         UIConfig.editBox:SetMultiLine(true);
         UIConfig.editBox:SetFontObject("ChatFontNormal");
-        UIConfig.editBox:SetSize(400, 500);
+        UIConfig.editBox:SetSize(390, 500);
         UIConfig.editBox:SetAutoFocus(false);
         UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "");
         UIConfig.editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end);
@@ -161,7 +172,7 @@
         UIConfig:SetScript("OnMouseDown", function(self, button)
             if button == "LeftButton" and UIConfig.editBox:HasFocus() then
                 -- Clear focus from the EditBox when clicking outside it
-                UIConfig.editBox:ClearFocus()
+                UIConfig.editBox:ClearFocus();
             end
         end)
 
@@ -198,29 +209,21 @@
         end)
 		
 	------- RENAME BUTTON FUNCTIONALITY -------
-	StaticPopupDialogs["MY_FIRST_POPUP"] = {
-		text = "New name of the button",
-		-- button1 = ACCEPT,
-		button1 = CANCEL,
+	StaticPopupDialogs["RENAME"] = {
+		text = L["New name of the note"],
+        button1 = ACCEPT,
+		button2 = CANCEL,
 		hasEditBox = 1,
 		maxLetters = 15,
-		OnShow = function(self, data1, data2)
+
+		OnAccept = function(self, data1)
 			local editBox = self.editBox
-			local d1 = data1
-			local d2 = data2
-			editBox:SetText(data2)
-			editBox:SetFocus()
+			local text = editBox:GetText()
+            local number = tonumber(text)
+            local btnToChange = UIConfig.navbar.noteButtons[data1]
+            btnToChange:SetText(text);
 		end,
-		-- OnAccept = function(self, data1, data2)
-			-- local editBox = self:GetParent().editBox
-			-- local text = editBox:GetText()
-					-- local number = tonumber(text)
-					-- --------------------------
-					-- local btnToChange = UIConfig.navbar.noteButtons[data1]
-					-- btnToChange:SetText(text);
-					-- --------------------------
-			-- self:GetParent():Hide()
-		-- end,
+
 		EditBoxOnEnterPressed = function(self, data1, data2)	--<-- /!\ same like the button OnAccept
 			local editBox = self:GetParent().editBox
 			local text = editBox:GetText()
@@ -235,11 +238,11 @@
 		EditBoxOnEscapePressed = function(self)
 			self:GetParent():Hide()
 		end,
+
 		timeout = 0,
 		whileDead = 1,
 		hideOnEscape = 1
 	}
-
 
     ------- INITIAL NOTE CREATION -------
     local function InitializeNotes()
