@@ -1,10 +1,11 @@
-    ------- DECLARATIONS -------
+  ------- DECLARATIONS -------
 
     MightyNotesList = MightyNotesList or {}
+	MightyNotesButtonsList = MightyNotesButtonsList or {}
     selectedNoteIndex = selectedNoteIndex or 1
     local void, MightyNotes_Locale = ...
     local L = MightyNotes_Locale.L
-
+	local activeNoteID = activeNoteID or 1
     ------- ALLOW ARROW KEYS -------
     
     for i = 1, NUM_CHAT_WINDOWS do
@@ -91,11 +92,12 @@
         local function RefreshNoteList()
             -- Ensure we have a table to store the buttons
             UIConfig.navbar.noteButtons = UIConfig.navbar.noteButtons or {}
-        
+			 
             -- Loop through each note and either reuse or create buttons
             for i, note in ipairs(MightyNotesList) do
                 local button = UIConfig.navbar.noteButtons[i]
-        
+				selectedNoteIndex = i
+				activeNoteID = i
                 -- Create a new button if it doesn't exist yet
                 if not button then
                     button = CreateFrame("Button", nil, UIConfig.navbar, "GameMenuButtonTemplate")
@@ -109,24 +111,29 @@
         
                 -- Set the button position and properties
                 button:SetPoint("TOP", UIConfig.navbar, "TOP", 5, -((i - 1) * 25))
-                button:SetText(L["Note "] .. i)
-        
+				local btnName = MightyNotesButtonsList[selectedNoteIndex]
+				if btnName then																			--<-- MODI.S (07/10|8.20)
+					button:SetText(btnName)
+				else 
+					button:SetText(L["Note "] .. i)
+				end	
+				btnName = nil
+
                 -- Ensure the button is shown (in case it was hidden before)
                 button:Show()
         
                 -- Set the click behavior to load the correct note
 				button:SetScript("OnClick", function(self, button)										--<-- MODI.S
-					if button == "LeftButton" then
-						selectedNoteIndex = i
+					if button == "LeftButton" then					
+						selectedNoteIndex = i  
+						activeNoteID = i
 						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "")
 						AdjustEditBoxHeight();						
-                    elseif button == "RightButton" then
-						varName  = i	--<-- BtnNumber
-						varName2 = UIConfig.navbar.noteButtons[i]:GetText() --<-- old name
-						local dialog = StaticPopup_Show("RENAME")
+                    elseif button == "RightButton" then																   
+						local dialog = StaticPopup_Show("RENAME")						
 						if (dialog) then
-							dialog.data  = varName
-							dialog.data2 = varName2
+							dialog.data  = i                        -- btnNr
+							dialog.data2 = UIConfig.navbar.noteButtons[i]:GetText()
 						end
 					end
                 end)
@@ -195,12 +202,15 @@
         ------- DELETE BUTTON FUNCTIONALITY -------
         UIConfig.deleteButton:SetScript("OnClick", function()
             if #MightyNotesList > 0 then
-                table.remove(MightyNotesList, selectedNoteIndex);
-                selectedNoteIndex = math.max(selectedNoteIndex - 1, 1);
-                UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "");
-                RefreshNoteList();
-                print(L["Note deleted!"]);
+                table.remove(MightyNotesList, activeNoteID);
+                selectedNoteIndex_tmp = math.max(selectedNoteIndex - 1, 1);
+                UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex_tmp] or "");
+				print(L["Note deleted!"]);
+			end
+			if #MightyNotesButtonsList > 0 then
+                table.remove(MightyNotesButtonsList, activeNoteID);
             end
+			RefreshNoteList();                
         end)
 
         ------- UPDATE BUTTON FUNCTIONALITY -------
@@ -215,33 +225,29 @@
 		button2 = CANCEL,
 		hasEditBox = 1,
 		maxLetters = 15,
-
-		OnAccept = function(self, data1)
+		OnAccept = function(self, data)
 			local editBox = self.editBox
 			local text = editBox:GetText()
-            local number = tonumber(text)
-            local btnToChange = UIConfig.navbar.noteButtons[data1]
+            local btnToChange = UIConfig.navbar.noteButtons[data]
             btnToChange:SetText(text);
+			MightyNotesButtonsList[data] = text
 		end,
-
-		EditBoxOnEnterPressed = function(self, data1, data2)	--<-- /!\ same like the button OnAccept
+		EditBoxOnEnterPressed = function(self, data)	--<-- /!\ same like the button OnAccept
 			local editBox = self:GetParent().editBox
 			local text = editBox:GetText()
-					local number = tonumber(text)
 					--------------------------
-					local btnToChange = UIConfig.navbar.noteButtons[data1]
+					local btnToChange = UIConfig.navbar.noteButtons[data]
 					btnToChange:SetText(text);
+					MightyNotesButtonsList[data] = text
 					--------------------------
 			self:GetParent():Hide()
 		end,
-		
 		EditBoxOnEscapePressed = function(self)
 			self:GetParent():Hide()
 		end,
-
 		timeout = 0,
 		whileDead = 1,
-		hideOnEscape = 1
+		hideOnEscape = 1,
 	}
 
     ------- INITIAL NOTE CREATION -------
