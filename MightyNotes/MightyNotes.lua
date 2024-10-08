@@ -1,11 +1,17 @@
   ------- DECLARATIONS -------
-
     MightyNotesList = MightyNotesList or {}
-	MightyNotesButtonsList = MightyNotesButtonsList or {}
-    selectedNoteIndex = selectedNoteIndex or 1
+    local selectedNoteIndex = selectedNoteIndex or 1
     local void, MightyNotes_Locale = ...
     local L = MightyNotes_Locale.L
-	local activeNoteID = activeNoteID or 1
+	
+    ------- DEBUGGING -------	
+	local DEBUG = false
+	local function print_d(text) 
+		if DEBUG then
+			print("Debug: " .. text)
+		end
+	end
+	
     ------- ALLOW ARROW KEYS -------
     
     for i = 1, NUM_CHAT_WINDOWS do
@@ -90,6 +96,7 @@
         ------- Misc. Notes -------
 
         local function RefreshNoteList()
+		print_d("RefNoteList...");
             -- Ensure we have a table to store the buttons
             UIConfig.navbar.noteButtons = UIConfig.navbar.noteButtons or {}
 			 
@@ -97,48 +104,40 @@
             for i, note in ipairs(MightyNotesList) do
                 local button = UIConfig.navbar.noteButtons[i]
 				selectedNoteIndex = i
-				activeNoteID = i
-                -- Create a new button if it doesn't exist yet
-                if not button then
-                    button = CreateFrame("Button", nil, UIConfig.navbar, "GameMenuButtonTemplate")
-                    button:SetSize(135, 20)
-                    button:SetNormalFontObject("GameFontNormal")
-                    button:SetHighlightFontObject("GameFontHighlight")
-       
-                    -- Store the button in the list
-                    UIConfig.navbar.noteButtons[i] = button
-                end
-        
-                -- Set the button position and properties
-                button:SetPoint("TOP", UIConfig.navbar, "TOP", 5, -((i - 1) * 25))
-				local btnName = MightyNotesButtonsList[selectedNoteIndex]
-				if btnName then																			--<-- MODI.S (07/10|8.20)
-					button:SetText(btnName)
-				else 
-					button:SetText(L["Note "] .. i)
-				end	
-				btnName = nil
+								
+				-- Create a new button if it doesn't exist yet
+				if not button then
+					button = CreateFrame("Button", nil, UIConfig.navbar, "GameMenuButtonTemplate")
+					button:SetSize(135, 20)
+					button:SetNormalFontObject("GameFontNormal")
+					button:SetHighlightFontObject("GameFontHighlight")
+					-- Store the button in the list
+					UIConfig.navbar.noteButtons[i] = button
+				end
+		
+				-- Set the button position and properties
+				button:SetPoint("TOP", UIConfig.navbar, "TOP", 5, -((i - 1) * 25))
+				button:SetText(MightyNotesList[selectedNoteIndex][1])
 
-                -- Ensure the button is shown (in case it was hidden before)
-                button:Show()
-        
-                -- Set the click behavior to load the correct note
-				button:SetScript("OnClick", function(self, button)										--<-- MODI.S
+				-- Ensure the button is shown (in case it was hidden before)
+				button:Show()
+		
+				-- Set the click behavior to load the correct note
+				button:SetScript("OnClick", function(self, button)
 					if button == "LeftButton" then					
 						selectedNoteIndex = i  
-						activeNoteID = i
-						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "")
+						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex][2] or "")
 						AdjustEditBoxHeight();						
-                    elseif button == "RightButton" then																   
+					elseif button == "RightButton" then																   
 						local dialog = StaticPopup_Show("RENAME")						
 						if (dialog) then
-							dialog.data  = i                        -- btnNr
+							dialog.data  = selectedNoteIndex 
 							dialog.data2 = UIConfig.navbar.noteButtons[i]:GetText()
 						end
 					end
-                end)
-				button:RegisterForClicks("AnyDown", "AnyUp");											--<-- MODI.E
-							
+				end)
+				button:RegisterForClicks("AnyDown", "AnyUp");
+			
             end
         
             -- Hide any unused buttons (in case there are more buttons than notes)
@@ -161,7 +160,7 @@
         UIConfig.editBox:SetFontObject("ChatFontNormal");
         UIConfig.editBox:SetSize(390, 500);
         UIConfig.editBox:SetAutoFocus(false);
-        UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex] or "");
+		--UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex][2] or "");
         UIConfig.editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end);
 
         local function AdjustEditBoxHeight()
@@ -185,31 +184,35 @@
 
         ------- SAVE BUTTON FUNCTIONALITY -------
         UIConfig.saveButton:SetScript("OnClick", function()
-            MightyNotesList[selectedNoteIndex] = UIConfig.editBox:GetText();
+			MightyNotesList[selectedNoteIndex][1] = MightyNotesList[selectedNoteIndex][1]
+			MightyNotesList[selectedNoteIndex][2] = UIConfig.editBox:GetText();	
             print(L["Note " .. selectedNoteIndex .. " saved!"]);
         end)
 
         ------- ADD BUTTON FUNCTIONALITY -------
         UIConfig.addButton:SetScript("OnClick", function()
-            table.insert(MightyNotesList, "");
+            table.insert(MightyNotesList, {L["Note "] .. #MightyNotesList + 1, L["Place notes here"]});
             selectedNoteIndex = #MightyNotesList;
             UIConfig.editBox:SetText(L["Place notes here"]);
             RefreshNoteList();
-            MightyNotesList[selectedNoteIndex] = UIConfig.editBox:GetText();
+            MightyNotesList[selectedNoteIndex][2] = UIConfig.editBox:GetText();
             print(L["New note added!"]);
         end)
 
         ------- DELETE BUTTON FUNCTIONALITY -------
         UIConfig.deleteButton:SetScript("OnClick", function()
             if #MightyNotesList > 0 then
-                table.remove(MightyNotesList, activeNoteID);
+                table.remove(MightyNotesList, selectedNoteIndex);
                 selectedNoteIndex_tmp = math.max(selectedNoteIndex - 1, 1);
-                UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex_tmp] or "");
+				if selectedNoteIndex_tmp > 0 then
+					UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex_tmp][2] or "");
+				else 
+					UIConfig.editBox:SetText(L["Create a new note or open one."]);
+				end
 				print(L["Note deleted!"]);
+			else
+				UIConfig.editBox:SetText(L["Create a new note or open one."]);
 			end
-			if #MightyNotesButtonsList > 0 then
-                table.remove(MightyNotesButtonsList, activeNoteID);
-            end
 			RefreshNoteList();                
         end)
 
@@ -230,7 +233,8 @@
 			local text = editBox:GetText()
             local btnToChange = UIConfig.navbar.noteButtons[data]
             btnToChange:SetText(text);
-			MightyNotesButtonsList[data] = text
+			print_d("data= " .. data);
+			MightyNotesList[data][1] = text
 		end,
 		EditBoxOnEnterPressed = function(self, data)	--<-- /!\ same like the button OnAccept
 			local editBox = self:GetParent().editBox
@@ -238,7 +242,8 @@
 					--------------------------
 					local btnToChange = UIConfig.navbar.noteButtons[data]
 					btnToChange:SetText(text);
-					MightyNotesButtonsList[data] = text
+					print_d("data= " .. data);
+					MightyNotesList[data][1] = text
 					--------------------------
 			self:GetParent():Hide()
 		end,
@@ -252,23 +257,27 @@
 
     ------- INITIAL NOTE CREATION -------
     local function InitializeNotes()
-        if table.MightyNotesList == 0 then
-            table.insert(MightyNotesList, L["Place notes here"]);
-            selectedNoteIndex = 1;
+        if #MightyNotesList == 0 then
+			table.insert(MightyNotesList, {L["Note 1"], L["Place notes here"]});
+            selectedNoteIndex = #MightyNotesList;
             print(L["First note added!"]);
+            print_d(L["DBG: " .. selectedNoteIndex]);
         else
             selectedNoteIndex = math.min(selectedNoteIndex, #MightyNotesList);
             RefreshNoteList();
+			print_d("DBG: " .. #MightyNotesList);
         end
     end
 
     ------- LOAD EXISTING NOTES ON SHOW -------
     UIConfig:SetScript("OnShow", function()
-        RefreshNoteList();
+		RefreshNoteList();
+		
         if MightyNotesList[selectedNoteIndex] then
-            UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex]);
+            UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex][1]);
             AdjustEditBoxHeight();
         else
+			print_d("NoteList empty");
             UIConfig.editBox:SetText(L["Create a new note or open one."]);
         end
     end)
@@ -283,5 +292,9 @@
 
     SLASH_MIGHTYNOTES1 = "/mightynotes"
     SlashCmdList.MIGHTYNOTES = function()
-        UIConfig:Show();
+		if not UIConfig:IsShown() then
+			UIConfig:Show()
+		else 
+			UIConfig:Hide()
+		end
     end
