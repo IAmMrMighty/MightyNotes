@@ -2,8 +2,8 @@
 ## Title: MightyNotes
 ## Notes: A very simple way to make notes in game
 ## Author: Sandro "mighty"
-## SavedVariablesPerCharacter: MightyNotesList, selectedNoteIndex
-## Version: 0.0.5
+## SavedVariablesPerCharacter: MightyNotesList, latestSelectedNoteIndex
+## Version: 0.0.6
 
 MightyNotes_Locale.lua
 MightyNotes.xml
