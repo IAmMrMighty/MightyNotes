@@ -67,17 +67,17 @@
 
         ------- ADD BUTTON -------
         UIConfig.addButton = CreateFrame("Button", nil, UIConfig, "GameMenuButtonTemplate");
-        UIConfig.addButton:SetPoint("LEFT", UIConfig, "BOTTOMLEFT", 10, 20);
-        UIConfig.addButton:SetSize(20, 20);
-        UIConfig.addButton:SetText(" + ");
+        UIConfig.addButton:SetPoint("BOTTOMLEFT", UIConfig, "BOTTOMLEFT", 10, 10);
+        UIConfig.addButton:SetSize(25, 20);
+        UIConfig.addButton:SetText("+");
         UIConfig.addButton:SetNormalFontObject("GameFontNormal");
         UIConfig.addButton:SetHighlightFontObject("GameFontHighlight");
 
         ------- DELETE BUTTON -------
         UIConfig.deleteButton = CreateFrame("Button", nil, UIConfig, "GameMenuButtonTemplate");
-        UIConfig.deleteButton:SetPoint("LEFT", UIConfig, "BOTTOMLEFT", 30, 20);
-        UIConfig.deleteButton:SetSize(20, 20);
-        UIConfig.deleteButton:SetText(" - ");
+        UIConfig.deleteButton:SetPoint("BOTTOMLEFT", UIConfig, "BOTTOMLEFT", 35, 10);
+        UIConfig.deleteButton:SetSize(25, 20);
+        UIConfig.deleteButton:SetText("-");
         UIConfig.deleteButton:SetNormalFontObject("GameFontNormal");
         UIConfig.deleteButton:SetHighlightFontObject("GameFontHighlight");
 
@@ -129,11 +129,11 @@
 				button:SetScript("OnClick", function(self, button)
 					if button == "LeftButton" then		
 						-- Update the FrameTitle onClick [with selectedNoteIndex]
+                        selectedNoteIndex = i;
 						UIConfig.title:SetText(addonName .. " | " .. MightyNotesList[selectedNoteIndex][1]);
-						UIConfig:Show();			
-						selectedNoteIndex = i  
-						latestSelectedNoteIndex['id'] = selectedNoteIndex
-						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex][2])
+						--UIConfig:Show();			useless
+						latestSelectedNoteIndex['id'] = selectedNoteIndex;
+						UIConfig.editBox:SetText(MightyNotesList[selectedNoteIndex][2]);
 						AdjustEditBoxHeight();		
 						
 					elseif button == "RightButton" then																   
@@ -181,15 +181,17 @@
         ------- editable text area -------
 
         UIConfig.scrollFrame = CreateFrame("ScrollFrame", "MightyNotes_ScrollFrame", UIConfig, "UIPanelScrollFrameTemplate");
-        UIConfig.scrollFrame:SetSize(400, 275);
-        UIConfig.scrollFrame:SetPoint("TOPRIGHT", UIConfig, "TOPRIGHT", -30, -40);
+        UIConfig.scrollFrame:SetSize(390, 275);
+        UIConfig.scrollFrame:SetPoint("TOPRIGHT", UIConfig, "TOPRIGHT", -35, -40);
+        UIConfig.scrollFrame:SetPoint("BOTTOMRIGHT", UIConfig, "BOTTOMRIGHT", -35, 40);
         --UIConfig.scrollFrame:SetClipsChildren(true);
 
         ------- EDITBOX -------
 
         UIConfig.editBox = CreateFrame("EditBox", "MightyNotes_EditBox", UIConfig.scrollFrame);
         UIConfig.editBox:SetMultiLine(true);
-        UIConfig.editBox:SetFontObject("ChatFontNormal");
+        UIConfig.editBox:SetFontObject("GameFontNormal");
+        UIConfig.editBox:SetHyperlinksEnabled(true);
         UIConfig.editBox:SetSize(390, 500);
         UIConfig.editBox:SetAutoFocus(false);
 		if MightyNotesList[selectedNoteIndex] then
@@ -227,7 +229,7 @@
         UIConfig.saveButton:SetScript("OnClick", function()
 			MightyNotesList[selectedNoteIndex][1] = MightyNotesList[selectedNoteIndex][1]
 			MightyNotesList[selectedNoteIndex][2] = UIConfig.editBox:GetText();	
-            print(L["Note " .. selectedNoteIndex .. " saved!"]);
+            print(L["Note "] .. selectedNoteIndex .. L[" saved!"]);
         end)
 
         ------- ADD BUTTON FUNCTIONALITY -------

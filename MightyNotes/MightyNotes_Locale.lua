@@ -17,6 +17,7 @@ if LANG == "deDE" then
     L['Update'] = "Aktualisieren";
     L["First note added!"] = "Erste Notiz hinzugefügt.";
     L["Note "] = "Notiz ";
+    L[" saved!"] = " gespeichert!";
     L["Create a new note or open one."] = "Erstelle eine Notiz oder öffne eine.";
     L["New name of the note"] = "Neuer Name der Notiz";
     L["Rename"] = "Umbenennen";
